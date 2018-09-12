@@ -1,0 +1,86 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>single</title>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- <audio controls autoplay></audio> -->
+        <input class="btn btn-primary btn-sm" onclick="startRecording()" type="button" value="record" />
+        <input class="btn btn-primary btn-sm" onclick="uploadAudio()" type="button" value="generate" />
+        <p id="s"></p>
+    </div>
+    <ul></ul>
+    <script type="text/javascript" src="lame.min.js"></script>
+    <script type="text/javascript" src="jquery.min.js"></script>
+    <script type="text/javascript" src="HZRecorder.js"></script>
+
+
+    <script>
+
+        var recorder;
+
+        var s = document.querySelector('#s');
+
+        var timer = 0;
+
+        var url = '#';
+
+        function startRecording() {
+            HZRecorder.get(function (rec) {
+                recorder = rec;
+                recorder.start();
+            }, {
+                format: 'mp3',
+                sampleRate: 8000,
+                sampleBits: 16,
+            });
+        }
+
+        function stopRecording() {
+            recorder && recorder.stop();
+        }
+
+        function playRecording() {
+            recorder && recorder.play(audio);
+        }
+
+        function uploadAudio() {
+            if(recorder) {
+                var file = recorder.getBlob();
+                if(file) {
+                    var formdata = new FormData();
+                    formdata.append('file', file);
+                    var a = document.createElement('a');
+                    a.download = window.URL.createObjectURL(file);
+                    a.href = a.download;
+                    a.innerHTML = Date.now() + '.mp3';
+                    $('<li>').append(a).appendTo('ul');
+                    return;
+
+                    $.ajax({
+                        url: url, 
+                        type: 'POST',
+                        data: formdata,
+                        dataType: 'json',
+                        contentType: false,
+                        processData: false,
+                    }).done(function(d){
+                        alert(d)
+                    }).fail(function(jqxhr, status, error){
+                        alert(status+'|'+error)
+                    })
+                }
+            }
+        }
+
+        function appendContent(txt) {
+            var p = document.createElement('p');
+            p.innerHTML = txt;
+            s.parentElement.insertBefore(p, s);
+        }
+    </script>
+
+</body>
+</html>

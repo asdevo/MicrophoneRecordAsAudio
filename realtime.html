@@ -1,0 +1,114 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>realtime</title>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- <audio controls autoplay></audio> -->
+        <input class="btn btn-primary btn-sm" onclick="startRecording()" type="button" value="start record" />
+        <input class="btn btn-default btn-sm" onclick="stopRecording()" type="button" value="stop record" />
+        <ul></ul>
+        <p id="s"></p>
+    </div>
+    <script type="text/javascript" src="jquery.min.js"></script>
+    <script type="text/javascript" src="HZRecorder.js"></script>
+
+
+    <script>
+
+        var recorder;
+
+        var s = document.querySelector('#s');
+
+        var timer = 0, gap = 5000, //Record every 5 seconds
+        seq = 0, voice_id="";
+
+        var url = '#';
+
+        function initRecord() {
+            timer && clearInterval(timer);
+            timer = 0;
+            seq = 0;
+            voice_id = "";
+        }
+
+        function startRecording() {
+            HZRecorder.get(function (rec) {
+                initRecord();
+                recorder = rec;
+                recorder.start();
+                timer = setInterval(function(){
+                    uploadAudio(seq++, 0, recorder.getBlob());
+                }, gap);
+            }, {
+                format: 'wav',
+                slice: true,
+                sampleRate: 8000,
+            });
+        }
+
+        function stopRecording(upload) {
+            if(recorder) {
+                if(false !== upload) {
+                    uploadAudio(seq, 1, recorder.getBlob());
+                }
+                recorder.stop(true);
+            }
+            // 重新初始化
+            initRecord();
+        }
+
+        function playRecording() {
+            recorder && recorder.play(audio);
+        }
+
+        function uploadAudio(seq, end, file) {
+            if(file && file.size > 44) {
+                // upload lastest audio section
+                if(seq > 0) {
+                    // var a = document.createElement('a');
+                    // a.download = window.URL.createObjectURL(file);
+                    // a.href = a.download;
+                    // a.innerHTML = '__'+Date.now();
+                    // $('<li>').append(a).appendTo('ul');
+                    // file = file.slice(44);
+                }
+                var formdata = new FormData();
+                seq > 0 && formdata.append('voice_id', voice_id);
+                formdata.append('seq', seq);
+                formdata.append('end', end);
+                formdata.append('file', file);
+                var a = document.createElement('a');
+                a.download = window.URL.createObjectURL(file);
+                a.href = a.download;
+                a.innerHTML = Date.now() + '.wav';
+                $('<li>').append(a).appendTo('ul');
+                return;
+
+                $.ajax({
+                    url: url, 
+                    type: 'POST',
+                    data: formdata,
+                    dataType: 'json',
+                    contentType: false,
+                    processData: false,
+                }).done(function(d){
+                    alert(d)
+                }).fail(function(jqxhr, status, error){
+                    stopRecording(false);
+                    alert(status+'|'+error)
+                })
+            }
+        }
+
+        function appendContent(txt) {
+            var p = document.createElement('p');
+            p.innerHTML = txt;
+            s.parentElement.insertBefore(p, s);
+        }
+    </script>
+
+</body>
+</html>
